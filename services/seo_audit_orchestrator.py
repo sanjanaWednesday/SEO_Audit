@@ -10,12 +10,16 @@ from typing import Dict, List, Optional, Any
 import logging
 
 from .dataforseo_client import DataForSEOClient
+from .mongo_service import MongoService
+from ..models.execution_logs import LogStatus
 
 logger = logging.getLogger(__name__)
 
 class SEOAuditOrchestrator:
-    def __init__(self):
+    def __init__(self, mongo_service: MongoService = None, execution_id: str = None):
         self.dataforseo = DataForSEOClient()
+        self.mongo_service = mongo_service
+        self.execution_id = execution_id
         self.results = {}
         
     async def run_complete_audit(self, target_domain: str, main_topic: str = None) -> Dict:
@@ -79,62 +83,148 @@ class SEOAuditOrchestrator:
     
     async def _establish_baseline(self, target_domain: str) -> Dict:
         """Phase 1: Get baseline metrics for your site"""
+        start_time = datetime.now()
         results = {}
         
-        # 1. Domain Metrics
-        logger.info("Getting domain metrics...")
-        results['domain_metrics'] = await self.dataforseo.get_domain_metrics(target_domain)
-        
-        # 2. Ranked Keywords
-        logger.info("Getting ranked keywords...")
-        results['ranked_keywords'] = await self.dataforseo.get_ranked_keywords(target_domain)
-        
-        # 3. Backlinks Summary
-        logger.info("Getting backlinks summary...")
-        results['backlinks_summary'] = await self.dataforseo.get_backlinks_summary(target_domain)
-        
-        return results
+        try:
+            # 1. Domain Metrics
+            logger.info("Getting domain metrics...")
+            results['domain_metrics'] = await self.dataforseo.get_domain_metrics(target_domain)
+            
+            # 2. Ranked Keywords
+            logger.info("Getting ranked keywords...")
+            results['ranked_keywords'] = await self.dataforseo.get_ranked_keywords(target_domain)
+            
+            # 3. Backlinks Summary
+            logger.info("Getting backlinks summary...")
+            results['backlinks_summary'] = await self.dataforseo.get_backlinks_summary(target_domain)
+            
+            # Log success
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "establish_baseline",
+                    LogStatus.SUCCESS,
+                    execution_time
+                )
+            
+            return results
+            
+        except Exception as e:
+            # Log failure
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "establish_baseline",
+                    LogStatus.FAILED,
+                    execution_time,
+                    error_message=str(e)
+                )
+            raise
     
     async def _discover_competitors(self, target_domain: str) -> List[str]:
         """Phase 2: Discover competitors"""
-        logger.info("Finding competitors...")
-        competitors_result = await self.dataforseo.get_competitors(target_domain)
+        start_time = datetime.now()
         
-        competitors = []
-        if competitors_result.get('tasks') and competitors_result['tasks'][0].get('result'):
-            for item in competitors_result['tasks'][0]['result']:
-                if item.get('domain'):
-                    competitors.append(item['domain'])
-        
-        logger.info(f"Found {len(competitors)} competitors")
-        return competitors
+        try:
+            logger.info("Finding competitors...")
+            competitors_result = await self.dataforseo.get_competitors(target_domain)
+            
+            competitors = []
+            if competitors_result.get('tasks') and competitors_result['tasks'][0].get('result'):
+                for item in competitors_result['tasks'][0]['result']:
+                    if item.get('domain'):
+                        competitors.append(item['domain'])
+            
+            # Store top 3 competitors in MongoDB
+            top_3_competitors = competitors[:3]
+            logger.info(f"Found {len(competitors)} competitors, storing top 3: {top_3_competitors}")
+            
+            if self.mongo_service and self.execution_id:
+                self.mongo_service.update_workflow_competitors(self.execution_id, top_3_competitors)
+                
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "discover_competitors",
+                    LogStatus.SUCCESS,
+                    execution_time
+                )
+            
+            return competitors
+            
+        except Exception as e:
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "discover_competitors",
+                    LogStatus.FAILED,
+                    execution_time,
+                    error_message=str(e)
+                )
+            raise
     
     async def _analyze_competitors(self, competitors: List[str]) -> Dict:
         """Phase 3: Analyze top competitors"""
+        start_time = datetime.now()
         results = {}
         
-        for i, competitor in enumerate(competitors, 1):
-            logger.info(f"Analyzing competitor {i}: {competitor}")
-            competitor_data = {}
+        try:
+            for i, competitor in enumerate(competitors, 1):
+                logger.info(f"Analyzing competitor {i}: {competitor}")
+                competitor_data = {}
+                
+                # Domain metrics
+                competitor_data['domain_metrics'] = await self.dataforseo.get_domain_metrics(competitor)
+                
+                # Ranked keywords
+                competitor_data['ranked_keywords'] = await self.dataforseo.get_ranked_keywords(competitor)
+                
+                # Backlinks summary
+                competitor_data['backlinks_summary'] = await self.dataforseo.get_backlinks_summary(competitor)
+                
+                # Backlinks list
+                competitor_data['backlinks_list'] = await self.dataforseo.get_backlinks_list(competitor)
+                
+                results[f'competitor_{i}'] = {
+                    'domain': competitor,
+                    'data': competitor_data
+                }
+                
+                # Store competitor analysis in MongoDB
+                if self.mongo_service and self.execution_id:
+                    self.mongo_service.store_competitor_analysis(
+                        self.execution_id,
+                        competitor,
+                        competitor_data
+                    )
             
-            # Domain metrics
-            competitor_data['domain_metrics'] = await self.dataforseo.get_domain_metrics(competitor)
+            # Log success
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "analyze_competitors",
+                    LogStatus.SUCCESS,
+                    execution_time
+                )
             
-            # Ranked keywords
-            competitor_data['ranked_keywords'] = await self.dataforseo.get_ranked_keywords(competitor)
+            return results
             
-            # Backlinks summary
-            competitor_data['backlinks_summary'] = await self.dataforseo.get_backlinks_summary(competitor)
-            
-            # Backlinks list
-            competitor_data['backlinks_list'] = await self.dataforseo.get_backlinks_list(competitor)
-            
-            results[f'competitor_{i}'] = {
-                'domain': competitor,
-                'data': competitor_data
-            }
-        
-        return results
+        except Exception as e:
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "analyze_competitors",
+                    LogStatus.FAILED,
+                    execution_time,
+                    error_message=str(e)
+                )
+            raise
     
     async def _find_opportunities(self, target_domain: str, competitor_analysis: Dict) -> Dict:
         """Phase 4: Find content opportunities"""

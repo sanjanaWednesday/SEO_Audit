@@ -1,12 +1,18 @@
 from enum import Enum
-from pydantic import BaseModel, HttpUrl
-from typing import List, Dict, Optional, datetime
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+class LogStatus(str, Enum):
+    SUCCESS = "success"
+    FAILED = "failed"
+    RUNNING = "running"
 
 class ExecutionLogs(BaseModel):
-    status: Enum
+    log_id: str
+    execution_id: str
+    step_name: str
+    status: LogStatus
     error_message: Optional[str] = None
-    excecution_time: int
+    execution_time: int  # in seconds
     timestamp: datetime
-    log_id : int
-    execution_id : str
-    step_name : str

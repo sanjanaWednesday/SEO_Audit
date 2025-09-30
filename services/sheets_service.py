@@ -27,7 +27,7 @@ class GoogleSheetsService:
                 return Credentials.from_service_account_info(creds_dict)
             
             # Try to get from file
-            creds_file = os.getenv('GOOGLE_SHEETS_CREDENTIALS_FILE', 'credentials.json')
+            creds_file = os.getenv('GOOGLE_SHEETS_CREDS', 'credentials.json')
             if os.path.exists(creds_file):
                 return Credentials.from_service_account_file(creds_file)
             
@@ -37,13 +37,21 @@ class GoogleSheetsService:
             logger.error(f"Failed to get Google Sheets credentials: {e}")
             raise
     
-    async def create_seo_report(self, audit_results: Dict, claude_analysis: Dict, target_domain: str) -> str:
+    async def create_seo_report(self, audit_results: Dict, claude_analysis: Dict, target_domain: str, user_email: str = None) -> str:
         """Create comprehensive SEO audit report in Google Sheets"""
         try:
             # Create new spreadsheet
             spreadsheet = self.client.create(f"SEO Audit Report - {target_domain} - {datetime.now().strftime('%Y-%m-%d')}")
             
-            # Share with anyone with the link
+            # Share with user email if provided (with edit permissions)
+            if user_email:
+                try:
+                    spreadsheet.share(user_email, perm_type='user', role='writer', notify=True, email_message=f"Your SEO Audit Report for {target_domain} is ready!")
+                    logger.info(f"Shared spreadsheet with user email: {user_email}")
+                except Exception as e:
+                    logger.warning(f"Failed to share with user email {user_email}: {e}")
+            
+            # Also share with anyone with the link (as backup)
             spreadsheet.share('', perm_type='anyone', role='reader')
             
             # Create all report sheets
