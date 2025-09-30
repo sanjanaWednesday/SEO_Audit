@@ -20,18 +20,14 @@ class BacklinkAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing backlinks summary data
         """
-        endpoint = "/backlinks/summary/task_post"
+        endpoint = "/backlinks/summary/live"
         data = [{
             "target": target,
             "internal_list_limit": internal_list_limit,
             "backlinks_status_type": backlinks_status_type
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create backlinks summary task"}
-        
-        return await self.get_task_result("/backlinks/summary/task_get", task_id, delay=60)
+        return await self.make_live_request(endpoint, data)
 
     async def get_backlinks_list(self, target: str, limit: int = 100) -> Dict:
         """
@@ -44,7 +40,7 @@ class BacklinkAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing detailed backlinks data
         """
-        endpoint = "/backlinks/backlinks/task_post"
+        endpoint = "/backlinks/backlinks/live"
         data = [{
             "target": target,
             "mode": "as_is",
@@ -53,8 +49,4 @@ class BacklinkAPIs(BaseDataForSEOClient):
             "limit": limit
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create backlinks list task"}
-        
-        return await self.get_task_result("/backlinks/backlinks/task_get", task_id, delay=60)
+        return await self.make_live_request(endpoint, data)

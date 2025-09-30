@@ -68,3 +68,7 @@ class BaseDataForSEOClient:
                 return result
         
         return result
+    
+    async def make_live_request(self, endpoint: str, data: List[Dict]) -> Dict:
+        """Make a live API request (immediate response, no task creation)"""
+        return await self._make_request('POST', endpoint, data)

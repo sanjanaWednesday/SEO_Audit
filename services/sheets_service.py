@@ -12,30 +12,75 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# class GoogleSheetsService:
+#     def __init__(self):
+#         self.credentials = self._get_credentials()
+#         self.client = gspread.authorize(self.credentials)
+        
+#     def _get_credentials(self):
+#         """Get Google Sheets credentials from service account"""
+#         try:
+#             # Define required scopes for Google Sheets and Drive
+#             SCOPES = [
+#                 "https://www.googleapis.com/auth/spreadsheets",
+#                 "https://www.googleapis.com/auth/drive"
+#             ]
+            
+#             # Try to get credentials from environment variable (JSON string)
+#             creds_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+#             if creds_json:
+#                 creds_dict = json.loads(creds_json)
+#                 return Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+            
+#             # Try to get from file
+#             creds_file = os.getenv('GOOGLE_SHEETS_CREDS', 'credentials.json')
+#             if os.path.exists(creds_file):
+#                 return Credentials.from_service_account_file(creds_file, scopes=SCOPES)
+            
+#             raise Exception("No Google Sheets credentials found")
+            
+#         except Exception as e:
+#             logger.error(f"Failed to get Google Sheets credentials: {e}")
+#             raise
 class GoogleSheetsService:
     def __init__(self):
-        self.credentials = self._get_credentials()
-        self.client = gspread.authorize(self.credentials)
+        # ❌ Commented service account code
+        # self.credentials = self._get_credentials()
+        # self.client = gspread.authorize(self.credentials)
         
+        # ✅ Temporary: use your own Google account via OAuth
+        self.client = gspread.oauth(
+            credentials_filename="credentials.json",
+            authorized_user_filename="token.json"
+        )
+
+
     def _get_credentials(self):
         """Get Google Sheets credentials from service account"""
         try:
+            # Define required scopes for Google Sheets and Drive
+            SCOPES = [
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive"
+            ]
+            
             # Try to get credentials from environment variable (JSON string)
             creds_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
             if creds_json:
                 creds_dict = json.loads(creds_json)
-                return Credentials.from_service_account_info(creds_dict)
+                return Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
             
             # Try to get from file
-            creds_file = os.getenv('GOOGLE_SHEETS_CREDS', 'credentials.json')
+            creds_file = os.getenv('GOOGLE_SHEETS_CREDS')
             if os.path.exists(creds_file):
-                return Credentials.from_service_account_file(creds_file)
+                return Credentials.from_service_account_file(creds_file, scopes=SCOPES)
             
             raise Exception("No Google Sheets credentials found")
             
         except Exception as e:
             logger.error(f"Failed to get Google Sheets credentials: {e}")
             raise
+
     
     async def create_seo_report(self, audit_results: Dict, claude_analysis: Dict, target_domain: str, user_email: str = None) -> str:
         """Create comprehensive SEO audit report in Google Sheets"""

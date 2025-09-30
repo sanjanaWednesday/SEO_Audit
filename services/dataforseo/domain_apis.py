@@ -46,7 +46,7 @@ class DomainAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing competitor domains and overlap data
         """
-        endpoint = "/dataforseo_labs/google/competitors_domain/task_post"
+        endpoint = "/dataforseo_labs/google/competitors_domain/live"
         data = [{
             "target": target,
             "location_code": location_code,
@@ -54,11 +54,7 @@ class DomainAPIs(BaseDataForSEOClient):
             "limit": limit
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create competitors task"}
-        
-        return await self.get_task_result("/dataforseo_labs/google/competitors_domain/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
 
     async def get_domain_intersection(self, targets: Dict[str, str], location_code: int = 2840, language_code: str = "en", intersections: str = "2", limit: int = 100) -> Dict:
         """
@@ -74,7 +70,7 @@ class DomainAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing intersection analysis data
         """
-        endpoint = "/dataforseo_labs/google/domain_intersection/task_post"
+        endpoint = "/dataforseo_labs/google/domain_intersection/live"
         data = [{
             "targets": targets,
             "location_code": location_code,
@@ -87,4 +83,4 @@ class DomainAPIs(BaseDataForSEOClient):
         if not task_id:
             return {"error": "Failed to create domain intersection task"}
         
-        return await self.get_task_result("/dataforseo_labs/google/domain_intersection/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
