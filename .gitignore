@@ -1,13 +1,32 @@
+# Environment and credentials
 .env
-venv/
-7_day_dev_plan.txt
-day4.txtpacific-destiny-473610-d0-45b3b7053456.json
-pacific-destiny-473610-d0-45b3b7053456.json
+*.json
+!package.json
+!tsconfig.json
+credentials.json
 token.json
-pacific-destiny-473610-d0-4afd76cc0192.json
-parse_results_to_csv.py
-seo_audit_complete.py
+pacific-destiny-*.json
+
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Output directories
+output/
 seo_audit_csvs/
-seo_audit_csvs/
-seo_audit_results_honeypacks_com_20251007_164803.json
-onpage_only_audit.py
+onpage_csvs/
+parsed_csvs/
+temp_csvs/
+
+# Test and development files
+7_day_dev_plan.txt
+*.log
+
+# OS files
+.DS_Store
+.python-version
+.zshrc
