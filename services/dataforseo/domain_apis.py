@@ -10,7 +10,7 @@ class DomainAPIs(BaseDataForSEOClient):
     
     async def get_domain_metrics(self, target: str, location_code: int = 2840, language_code: str = "en") -> Dict:
         """
-        Get domain metrics for a website
+        Get domain metrics for a website (using domain_rank_overview)
         
         Args:
             target: Domain to analyze (e.g., "example.com")
@@ -20,18 +20,14 @@ class DomainAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing domain metrics data
         """
-        endpoint = "/dataforseo_labs/google/domain_metrics/task_post"
+        endpoint = "/dataforseo_labs/google/domain_rank_overview/live"
         data = [{
             "target": target,
             "location_code": location_code,
             "language_code": language_code
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create domain metrics task"}
-        
-        return await self.get_task_result("/dataforseo_labs/google/domain_metrics/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
 
     async def get_competitors(self, target: str, location_code: int = 2840, language_code: str = "en", limit: int = 10) -> Dict:
         """
@@ -58,7 +54,7 @@ class DomainAPIs(BaseDataForSEOClient):
 
     async def get_domain_intersection(self, targets: Dict[str, str], location_code: int = 2840, language_code: str = "en", intersections: str = "2", limit: int = 100) -> Dict:
         """
-        Get domain intersection for content gap analysis
+        Get domain intersection for content gap analysis    
         
         Args:
             targets: Dict mapping target IDs to domains (e.g., {"1": "mysite.com", "2": "competitor.com"})
@@ -78,9 +74,5 @@ class DomainAPIs(BaseDataForSEOClient):
             "intersections": intersections,
             "limit": limit
         }]
-        
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create domain intersection task"}
         
         return await self.make_live_request(endpoint, data)

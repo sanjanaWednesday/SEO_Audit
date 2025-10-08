@@ -10,7 +10,7 @@ class KeywordAPIs(BaseDataForSEOClient):
     
     async def get_ranked_keywords(self, target: str, location_code: int = 2840, language_code: str = "en", limit: int = 100) -> Dict:
         """
-        Get ranked keywords for a website
+        Get ranked keywords for a website (LIVE)
         
         Args:
             target: Domain to analyze (e.g., "example.com")
@@ -21,7 +21,7 @@ class KeywordAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing ranked keywords data
         """
-        endpoint = "/dataforseo_labs/google/ranked_keywords/task_post"
+        endpoint = "/dataforseo_labs/google/ranked_keywords/live"
         data = [{
             "target": target,
             "location_code": location_code,
@@ -29,15 +29,11 @@ class KeywordAPIs(BaseDataForSEOClient):
             "limit": limit
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create ranked keywords task"}
-        
-        return await self.get_task_result("/dataforseo_labs/google/ranked_keywords/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
 
     async def get_keywords_from_site(self, target: str, location_code: int = 2840, language_code: str = "en", include_serp_info: bool = True, limit: int = 100) -> Dict:
         """
-        Get keywords from a website
+        Get keywords from a website (LIVE)
         
         Args:
             target: Domain to analyze (e.g., "competitor.com")
@@ -49,7 +45,7 @@ class KeywordAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing keywords found on the site
         """
-        endpoint = "/keywords_data/google_ads/keywords_for_site/task_post"
+        endpoint = "/dataforseo_labs/google/keywords_for_site/live"
         data = [{
             "target": target,
             "location_code": location_code,
@@ -58,16 +54,11 @@ class KeywordAPIs(BaseDataForSEOClient):
             "limit": limit
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create keywords from site task"}
-        
-        return await self.get_task_result("/keywords_data/google_ads/keywords_for_site/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
 
     async def get_search_volume(self, keywords: List[str], location_code: int = 2840, language_code: str = "en") -> Dict:
         """
-        Get search volume for keywords
-        
+        Get search volume for keywords (LIVE)
         Args:
             keywords: List of keywords to analyze
             location_code: Location code (2840 = United States)
@@ -76,23 +67,19 @@ class KeywordAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing search volume data for each keyword
         """
-        endpoint = "/keywords_data/google_ads/search_volume/task_post"
+        endpoint = "/keywords_data/google_ads/search_volume/live"
         data = [{
             "keywords": keywords,
             "location_code": location_code,
             "language_code": language_code
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create search volume task"}
-        
-        return await self.get_task_result("/keywords_data/google_ads/search_volume/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
 
     async def get_keyword_suggestions(self, keyword: str, location_code: int = 2840, language_code: str = "en", include_seed_keyword: bool = True, include_serp_info: bool = True, limit: int = 100) -> Dict:
         """
-        Get keyword suggestions for a main topic
-        
+        Get keyword suggestions for a main topic (LIVE)
+
         Args:
             keyword: Seed keyword to get suggestions for
             location_code: Location code (2840 = United States)
@@ -104,7 +91,7 @@ class KeywordAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing keyword suggestions
         """
-        endpoint = "/keywords_data/google_ads/keywords_for_keywords/task_post"
+        endpoint = "/dataforseo_labs/google/keyword_suggestions/live"
         data = [{
             "keyword": keyword,
             "location_code": location_code,
@@ -114,8 +101,4 @@ class KeywordAPIs(BaseDataForSEOClient):
             "limit": limit
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create keyword suggestions task"}
-        
-        return await self.get_task_result("/keywords_data/google_ads/keywords_for_keywords/task_get", task_id)
+        return await self.make_live_request(endpoint, data)

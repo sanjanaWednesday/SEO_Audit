@@ -10,7 +10,7 @@ class SERPAPIs(BaseDataForSEOClient):
     
     async def get_serp_analysis(self, keyword: str, location_code: int = 2840, language_code: str = "en", device: str = "desktop", depth: int = 100) -> Dict:
         """
-        Get SERP analysis for a keyword
+        Get SERP analysis for a keyword (LIVE)
         
         Args:
             keyword: Keyword to analyze SERP for
@@ -22,8 +22,8 @@ class SERPAPIs(BaseDataForSEOClient):
         Returns:
             Dict containing SERP analysis data
         """
-        endpoint = "/serp/google/organic/task_post"
-        data = [{
+        endpoint = "/serp/google/organic/live/regular"
+        data = [{   
             "keyword": keyword,
             "location_code": location_code,
             "language_code": language_code,
@@ -31,15 +31,11 @@ class SERPAPIs(BaseDataForSEOClient):
             "depth": depth
         }]
         
-        task_id = await self.create_task(endpoint, data)
-        if not task_id:
-            return {"error": "Failed to create SERP analysis task"}
-        
-        return await self.get_task_result("/serp/google/organic/task_get", task_id)
+        return await self.make_live_request(endpoint, data)
 
     async def get_content_analysis(self, url: str, enable_javascript: bool = True, support_javascript: bool = True) -> Dict:
         """
-        Get instant content analysis for a URL
+        Get instant content analysis for a URL (LIVE)
         
         Args:
             url: URL to analyze (e.g., "https://example.com/page")
@@ -56,4 +52,4 @@ class SERPAPIs(BaseDataForSEOClient):
             "support_javascript": support_javascript
         }]
         
-        return await self._make_request('POST', endpoint, data)
+        return await self.make_live_request(endpoint, data)

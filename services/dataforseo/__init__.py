@@ -8,6 +8,7 @@ from .domain_apis import DomainAPIs
 from .keyword_apis import KeywordAPIs
 from .backlink_apis import BacklinkAPIs
 from .serp_apis import SERPAPIs
+from .onpage_apis import OnPageAPIs
 
 class DataForSEOClient:
     """
@@ -37,6 +38,7 @@ class DataForSEOClient:
         self.keyword = KeywordAPIs()
         self.backlink = BacklinkAPIs()
         self.serp = SERPAPIs()
+        self.onpage = OnPageAPIs()
     
     # Convenience methods for backward compatibility
     async def get_domain_metrics(self, target: str, location_code: int = 2840, language_code: str = "en") -> dict:
@@ -82,5 +84,45 @@ class DataForSEOClient:
     async def get_backlinks_list(self, target: str, limit: int = 100) -> dict:
         """Convenience method for backlinks list"""
         return await self.backlink.get_backlinks_list(target, limit)
+class OnPageAPIs:
+    def __init__(self, client=None):
+        self.client = client  # BaseDataForSEOClient instance
 
-__all__ = ['DataForSEOClient', 'DomainAPIs', 'KeywordAPIs', 'BacklinkAPIs', 'SERPAPIs', 'BaseDataForSEOClient']
+    async def start_crawling_task(self, target, start_url=None, max_crawl_pages=10,
+                                  force_sitewide_checks=True, max_crawl_depth=2,
+                                   store_raw_html=True,
+                                  enable_javascript=True, support_javascript=True):
+        """Create a new crawl task"""
+        body = {
+            "target": target,
+            "start_url": start_url or f"https://{target}",
+            "max_crawl_pages": max_crawl_pages,
+            "force_sitewide_checks": force_sitewide_checks,
+            "max_crawl_depth": max_crawl_depth,
+            "store_raw_html": store_raw_html,
+            "enable_javascript": enable_javascript,
+            "support_javascript": support_javascript
+        }
+        response = await self.client.post("/v3/on_page/task_post", body)
+        task_id = response.get("tasks", [{}])[0].get("id")
+        return task_id
+
+    async def get_task_result(self, task_id):
+        """Get crawl results for a task_id"""
+        response = await self.client.get(f"/v3/on_page/task_get/{task_id}")
+        return response
+
+    async def get_crawled_pages(self, crawl_id, limit=10, filters=None, order_by=None, offset=0):
+        """Fetch pages data using crawl_id"""
+        body = {
+            "crawl_id": crawl_id,
+            "limit": limit,
+            "offset": offset,
+            "filters": filters or [],
+            "order_by": order_by or []
+        }
+        response = await self.client.post("/v3/on_page/pages", body)
+        return response
+
+
+__all__ = ['DataForSEOClient', 'DomainAPIs', 'KeywordAPIs', 'BacklinkAPIs', 'SERPAPIs', 'OnPageAPIs', 'BaseDataForSEOClient']

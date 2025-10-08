@@ -9,9 +9,9 @@ import os
 import logging
 from bson import ObjectId
 
-from ..models.workflow_excecution import WorkflowExecution, WorkflowStatus
-from ..models.competitor_analysis import CompetitorAnalysis
-from ..models.execution_logs import ExecutionLogs, LogStatus
+from models.workflow_excecution import WorkflowExecution, WorkflowStatus
+from models.competitor_analysis import CompetitorAnalysis
+from models.execution_logs import ExecutionLogs, LogStatus
 
 logger = logging.getLogger(__name__)
 

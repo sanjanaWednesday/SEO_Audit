@@ -1,0 +1,34 @@
+# SEO Audit Configuration File
+# =============================
+# Edit this file with your website details before running the audit
+
+# REQUIRED: The website domain to audit (without http:// or www.)
+website: "honeypacks.com"
+
+# OPTIONAL: Competitor websites to analyze
+# Leave empty [] or remove if you want auto-discovery
+# If provided, these competitors will be used instead of API discovery
+competitors:
+  - "beecrafthoney.com"
+  - "royalhoney.com"
+
+# OPTIONAL: Target keywords for analysis
+# Leave empty [] or remove if you want keyword discovery
+# If provided, these keywords will be analyzed first (priority)
+keywords:
+  - "honey packs"
+  - "royal honey"
+  - "natural honey"
+  - "honey supplements"
+  - "energy honey"
+
+# OPTIONAL: Main topic for keyword suggestions
+# Leave empty or remove if not applicable
+main_topic: "honey products"
+
+# OPTIONAL: Maximum pages to crawl for on-page analysis (default: 10)
+max_crawl_pages: 10
+
+# OPTIONAL: Output directory base name (default: "output")
+output_dir: "output"
+

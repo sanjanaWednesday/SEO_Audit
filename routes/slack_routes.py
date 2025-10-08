@@ -13,11 +13,11 @@ from slack_sdk.signature import SignatureVerifier
 from slack_sdk.errors import SlackApiError
 import json
 
-from ..services.seo_audit_orchestrator import SEOAuditOrchestrator
-from ..services.sheets_service import GoogleSheetsService
-from ..services.claude_service import ClaudeService
-from ..services.mongo_service import MongoService
-from ..models.workflow_excecution import WorkflowStatus
+from services.seo_audit_orchestrator import SEOAuditOrchestrator
+from services.sheets_service_personal import GoogleSheetsServicePersonal
+from services.claude_service import ClaudeService
+from services.mongo_service import MongoService
+from models.workflow_excecution import WorkflowStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,7 +25,7 @@ router = APIRouter()
 # Initialize services
 slack_client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 signature_verifier = SignatureVerifier(os.getenv('SLACK_SIGNING_SECRET'))
-sheets_service = GoogleSheetsService()
+sheets_service = GoogleSheetsServicePersonal()
 claude_service = ClaudeService()
 mongo_service = MongoService()
 

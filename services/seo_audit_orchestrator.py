@@ -11,7 +11,7 @@ import logging
 
 from .dataforseo_client import DataForSEOClient
 from .mongo_service import MongoService
-from ..models.execution_logs import LogStatus
+from models.execution_logs import LogStatus
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,11 @@ class SEOAuditOrchestrator:
             logger.info("Phase 7: Content quality check")
             content_analysis = await self._content_quality_check(target_domain)
             self.results['content_analysis'] = content_analysis
+            
+            # Phase 8: On-Page Analysis
+            logger.info("Phase 8: On-page analysis")
+            onpage_analysis = await self._onpage_analysis(target_domain)
+            self.results['onpage_analysis'] = onpage_analysis
             
             # Save results
             await self._save_results(target_domain)
@@ -316,6 +321,96 @@ class SEOAuditOrchestrator:
         return {
             'homepage_analysis': content_analysis
         }
+    
+    async def _onpage_analysis(self, target_domain: str) -> Dict:
+        """Phase 8: On-page analysis"""
+        start_time = datetime.now()
+        
+        try:
+            logger.info("Running on-page analysis...")
+            
+            # Start crawling task
+            task_id = await self.dataforseo.onpage.start_crawling_task(
+                target=target_domain,
+                start_url=f"https://{target_domain}",
+                max_crawl_pages=10,
+                force_sitewide_checks=True,
+                max_crawl_depth=2,
+                store_raw_html=True,
+                enable_javascript=True,
+                support_javascript=True
+            )
+            
+            if not task_id:
+                raise Exception("Failed to create on-page crawling task")
+            
+            # Wait for task completion
+            await self._wait_for_onpage_task_completion(task_id)
+            
+            # Get pages data
+            pages_data = await self.dataforseo.onpage.get_crawled_pages(
+                task_id=task_id,
+                limit=10,
+                filters=[
+                    ["resource_type", "=", "html"],
+                    "and",
+                    ["meta.scripts_count", ">", 40]
+                ],
+                order_by=["meta.content.plain_text_word_count,desc"]
+            )
+            
+            # Log success
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "onpage_analysis",
+                    LogStatus.SUCCESS,
+                    execution_time
+                )
+            
+            return {
+                'task_id': task_id,
+                'pages_data': pages_data
+            }
+            
+        except Exception as e:
+            # Log failure
+            if self.mongo_service and self.execution_id:
+                execution_time = int((datetime.now() - start_time).total_seconds())
+                self.mongo_service.log_execution_step(
+                    self.execution_id,
+                    "onpage_analysis",
+                    LogStatus.FAILED,
+                    execution_time,
+                    error_message=str(e)
+                )
+            raise
+    
+    async def _wait_for_onpage_task_completion(self, task_id: str):
+        """Wait for on-page task completion"""
+        max_attempts = 30
+        delay = 60
+        
+        for attempt in range(max_attempts):
+            try:
+                result = await self.dataforseo.onpage.get_page_summary(task_id)
+                
+                if result.get('tasks') and result['tasks'][0].get('status_code') == 20000:
+                    logger.info("On-page task completed successfully")
+                    return
+                
+                if attempt < max_attempts - 1:
+                    logger.info(f"On-page task {task_id} not ready, waiting {delay}s (attempt {attempt + 1}/{max_attempts})")
+                    await asyncio.sleep(delay)
+                else:
+                    raise Exception(f"On-page task {task_id} failed after {max_attempts} attempts")
+                    
+            except Exception as e:
+                logger.error(f"Error checking on-page task status: {e}")
+                if attempt == max_attempts - 1:
+                    raise
+                await asyncio.sleep(delay)
     
     async def _save_results(self, target_domain: str) -> str:
         """Save results to JSON file"""
